@@ -214,20 +214,22 @@ impl Handler {
 
     fn process_pending_pointer_moves(&mut self) {
         let moves = std::mem::take(&mut self.pending_pointer_moves);
-        thread::sleep(Duration::from_millis(POINTERMOVE_INTERVAL));
-        for PendingPointerMove {
-            input_id,
-            duration,
-            start_x,
-            start_y,
-            target_x,
-            target_y,
-            tick_start,
-        } in moves
-        {
-            self.perform_pointer_move(
-                &input_id, duration, start_x, start_y, target_x, target_y, tick_start,
-            );
+        if !moves.is_empty() {
+            thread::sleep(Duration::from_millis(POINTERMOVE_INTERVAL));
+            for PendingPointerMove {
+                input_id,
+                duration,
+                start_x,
+                start_y,
+                target_x,
+                target_y,
+                tick_start,
+            } in moves
+            {
+                self.perform_pointer_move(
+                    &input_id, duration, start_x, start_y, target_x, target_y, tick_start,
+                );
+            }
         }
     }
 
