@@ -28,8 +28,8 @@ use webdriver::error::{ErrorStatus, WebDriverError};
 use crate::{Handler, VerifyBrowsingContextIsOpen, WebElement, wait_for_oneshot_response};
 
 /// Interval between wheelScroll and pointerMove increments in ms, based on common vsync
-static POINTERMOVE_INTERVAL: u64 = 17;
-static WHEELSCROLL_INTERVAL: u64 = 17;
+static POINTERMOVE_INTERVAL: u64 = 16;
+static WHEELSCROLL_INTERVAL: u64 = 16;
 
 /// <https://w3c.github.io/webdriver/#dfn-element-click>
 /// This is hard-coded as 0 in spec.
@@ -192,20 +192,18 @@ impl Handler {
             // Specifically, this happens for click simulation from touch events.
             // You can guarantee to catch it with `time.sleep` in the test.
             self.wait_for_input_event_handled()?;
+            self.process_pending_pointer_moves();
             // At least tick duration milliseconds have passed.
             let elapsed = now.elapsed().as_millis() as u64;
             if elapsed < tick_duration {
                 let sleep_duration = tick_duration - elapsed;
                 thread::sleep(Duration::from_millis(sleep_duration));
             }
-
-            self.process_pending_pointer_moves();
         }
 
         // Edge case: All tick actions are processed. But `pending_pointer_moves` may
         // still be non-empty.
         while !self.pending_pointer_moves.is_empty() {
-            thread::sleep(Duration::from_millis(POINTERMOVE_INTERVAL));
             self.process_pending_pointer_moves();
         }
 
@@ -216,6 +214,7 @@ impl Handler {
 
     fn process_pending_pointer_moves(&mut self) {
         let moves = std::mem::take(&mut self.pending_pointer_moves);
+        thread::sleep(Duration::from_millis(POINTERMOVE_INTERVAL));
         for PendingPointerMove {
             input_id,
             duration,
